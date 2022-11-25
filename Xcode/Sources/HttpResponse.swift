@@ -85,6 +85,7 @@ public enum HttpResponse {
     case movedTemporarily(String)
     case badRequest(HttpResponseBody?), unauthorized(HttpResponseBody?), forbidden(HttpResponseBody?), notFound(HttpResponseBody? = nil), notAcceptable(HttpResponseBody?), tooManyRequests(HttpResponseBody?), internalServerError(HttpResponseBody?)
     case raw(Int, String, [String: String]?, ((HttpResponseBodyWriter) throws -> Void)? )
+    case rawProtocol(Int, String, [String: String]?,String?, (Socket) -> Void )
 
     public var statusCode: Int {
         switch self {
@@ -102,6 +103,16 @@ public enum HttpResponse {
         case .tooManyRequests         : return 429
         case .internalServerError     : return 500
         case .raw(let code, _, _, _)  : return code
+        case .rawProtocol(let code, _, _, _, _): return code
+        }
+    }
+    
+    var protocolString: String {
+        switch self {
+        case .rawProtocol(_, _, _, let protocolStr, _):
+            return protocolStr ?? "HTTP/1.1"
+        default:
+            return "HTTP/1.1"
         }
     }
 
@@ -121,6 +132,7 @@ public enum HttpResponse {
         case .tooManyRequests          : return "Too Many Requests"
         case .internalServerError      : return "Internal Server Error"
         case .raw(_, let phrase, _, _) : return phrase
+        case .rawProtocol(_, let phrase,_ , _, _) : return phrase
         }
     }
 
@@ -152,6 +164,12 @@ public enum HttpResponse {
                     headers.updateValue(value, forKey: key)
                 }
             }
+        case .rawProtocol(_, _, let rawHeaders,_, _):
+            if let rawHeaders = rawHeaders {
+                for (key, value) in rawHeaders {
+                    headers.updateValue(value, forKey: key)
+                }
+            }
         default:break
         }
         return headers
@@ -169,6 +187,7 @@ public enum HttpResponse {
     func socketSession() -> ((Socket) -> Void)? {
         switch self {
         case .switchProtocols(_, let handler) : return handler
+        case .rawProtocol(_, _, _, _, let handler) : return handler
         default: return nil
         }
     }

@@ -174,7 +174,7 @@ open class HttpServerIO {
 
         var responseHeader = String()
 
-        responseHeader.append("HTTP/1.1 \(response.statusCode) \(response.reasonPhrase)\r\n")
+        responseHeader.append("\(response.protocolString) \(response.statusCode) \(response.reasonPhrase)\r\n")
 
         let content = response.content()
 
